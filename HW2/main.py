@@ -14,7 +14,7 @@ def test_linear(data, linear):
 	draw(xs, ys, zs, linear)
 	eprint.exit()
 
-for setting_method in (fair_linear,):
+for setting_method in (fair_linear, genetic_linear):
 	eprint("Start %s method:" % setting_method.__name__.split('_')[0])
 	eprint.enter()
 	data = read_csv("prices_all.csv")[1:]

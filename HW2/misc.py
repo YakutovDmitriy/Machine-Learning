@@ -38,6 +38,8 @@ class Linear:
         return "Linear(%.2f, %.2f, %.2f)" % (self.__cx, self.__cy, self.__add)
     def std(self, data):
         return np.sqrt(sum((self(p[0], p[1]) - p[2]) ** 2 for p in data) / len(data))
+    def copy(self):
+        return Linear(self.__cx, self.__cy, self.__add)
 
 def ask(ques):
     while True:
