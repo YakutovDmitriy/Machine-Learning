@@ -47,8 +47,11 @@ def descent_linear(points):
 
 	return Linear(w[0], w[1], w[2])
 
-data = read_csv("prices_all.csv")[1:]
-for i in range(len(data)):
-	for j in range(len(data[i])):
-		data[i][j] = float(data[i][j])
-descent_linear(data)
+#       Please comment all global actions before commiting!
+
+
+# data = read_csv("prices_all.csv")[1:]
+# for i in range(len(data)):
+# 	for j in range(len(data[i])):
+# 		data[i][j] = float(data[i][j])
+# descent_linear(data)

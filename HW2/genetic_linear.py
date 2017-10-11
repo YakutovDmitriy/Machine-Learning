@@ -1,7 +1,8 @@
 from misc import *
 import random
 
-def genetic_linear(points, repeats=10, upd_period=500, CR=0.9, F=0.8, DCR=0.9):
+def genetic_linear(points):
+	repeats, upd_period, CR, F = 1, 200, 0.9, 0.8
 	dim = len(points[0])
 	generation_size = dim * 10
 	random.seed(960172)
@@ -12,7 +13,6 @@ def genetic_linear(points, repeats=10, upd_period=500, CR=0.9, F=0.8, DCR=0.9):
 		ret = a.copy()
 		for i in range(dim):
 			ret[i] += F * (b[i] - c[i])
-			ret[i] = max(ret[i], 0)
 		return ret
 	def crossover(a, b):
 		ret = a.copy()
@@ -20,6 +20,12 @@ def genetic_linear(points, repeats=10, upd_period=500, CR=0.9, F=0.8, DCR=0.9):
 			if not get_event(CR):
 				ret[i] = b[i]
 		return ret
+
+	best_result = [Linear(0, 0, 0), Linear(0, 0, 0).std(points)]
+	def update(inst, value):
+		if value < best_result[1]:
+			best_result[0] = Linear(inst[0], inst[1], inst[2])
+			best_result[1] = value
 
 	for rep in range(repeats):
 		eprint("Start %d repeat" % (rep + 1))
@@ -40,10 +46,7 @@ def genetic_linear(points, repeats=10, upd_period=500, CR=0.9, F=0.8, DCR=0.9):
 					new_generation.append(generation[i])
 					new_values.append(values[i])
 			generation, values = new_generation, new_values
-		CR *= DCR
+		for i in range(generation_size):
+			update(generation[i], values[i])
 
-	pos = 0
-	for i in range(generation_size):
-		if values[pos] > values[i]:
-			pos = i
-	return Linear(generation[pos][0], generation[pos][1], generation[pos][2])
+	return best_result[0]
