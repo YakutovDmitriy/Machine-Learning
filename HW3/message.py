@@ -6,7 +6,7 @@ class Message:
     def __init__(self, subject, text):
         self.subject = subject
         self.text = text
-    def str(self):
+    def __str__(self):
         return ("Subject: %s" % ' '.join(self.subject) + '\n\n' + ' '.join(self.text))
 
 def parse_message(all):
