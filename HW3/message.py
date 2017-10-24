@@ -10,7 +10,7 @@ class Message:
     __slots__ = ['subject', 'text', 'spam', 'mtype']
     def __init__(self, subject, text, mtype):
         self.subject = subject
-        self.text = text
+        self.text = subject * 10 + text
         self.mtype = mtype
     def __str__(self):
         return ("Subject (%s): %s" % (self.mtype, ' '.join(map(str, self.subject))) + '\n\n' + ' '.join(map(str, self.text)))
@@ -35,3 +35,5 @@ def read_messages():
             with open(cwd + '\\input\\' + part + '\\' + fn, 'r') as f:
                 ret[-1].append(parse_message(fn, list(f)))
     return ret
+
+read_messages()
