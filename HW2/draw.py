@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 def draw(xs, ys, zs, linear):
 	eprint("Start draw")
@@ -48,3 +50,16 @@ def draw(xs, ys, zs, linear):
 	fig.colorbar(surf, shrink=0.5, aspect=5)
 	plt.show()
 	eprint.exit()
+
+def build_graph(graphs):
+	cmap_bold = ListedColormap(['#000000', '#ffffff'])
+	plt.figure()
+	plt.rcParams["figure.figsize"] = list(map(lambda x: x * 1, plt.rcParams["figure.figsize"]))
+	for i, graph in enumerate(graphs):
+		graph, color = graph[0], graph[1]
+		yy, xx = map(list, zip(*graph))
+		plt.scatter(xx, yy,  c=color,cmap=cmap_bold,linewidths=0, s = 5 - i)
+	plt.xlim(0, 2)
+	plt.ylim(0, 4 * 10 ** 5)
+	plt.title("Time all")
+	plt.show()

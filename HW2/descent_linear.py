@@ -1,7 +1,10 @@
 from misc import *
 import random
+from time import time
 
 def descent_linear(points):
+	old_points = points
+	starttime = time()
 	np.random.seed(2018)
 
 	def a(w, x):
@@ -53,6 +56,9 @@ def descent_linear(points):
 	_lambda = 1 / x.shape[0]
 	eps = 1e-10
 	curStep = 0
+
+	graph = []
+
 	while True:
 		curIndex = np.random.randint(0, x.shape[0] - 1)
 		curX = x[curIndex]
@@ -72,9 +78,9 @@ def descent_linear(points):
 		curStep += 1
 		if (curStep % 1000 == 0):
 			print("curStep %i" % curStep)
+		graph.append((Linear(w[0] / maxArray[0] * maxY, w[1] / maxArray[1] * maxY, w[2] * maxY).std(old_points), time() - starttime))
 
 	w[0] = w[0] / maxArray[0] * maxY
 	w[1] = w[1] / maxArray[1] * maxY
 	w[2] = w[2] * maxY
-	return Linear(w[0], w[1], w[2])
-
+	return (graph, 'b'), Linear(w[0], w[1], w[2])

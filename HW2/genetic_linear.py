@@ -1,7 +1,9 @@
 from misc import *
 import random
+from time import time
 
 def genetic_linear(points):
+	starttime = time()
 	repeats, upd_period, CR, F = 1, 200, 0.9, 0.8
 	dim = len(points[0])
 	generation_size = dim * 10
@@ -27,6 +29,8 @@ def genetic_linear(points):
 			best_result[0] = Linear(inst[0], inst[1], inst[2])
 			best_result[1] = value
 
+	graph = []
+
 	for rep in range(repeats):
 		eprint("Start %d repeat" % (rep + 1))
 		generation = [[random.uniform(0, 100000) for _ in range(dim)] for _ in range(generation_size)]
@@ -46,7 +50,8 @@ def genetic_linear(points):
 					new_generation.append(generation[i])
 					new_values.append(values[i])
 			generation, values = new_generation, new_values
-		for i in range(generation_size):
-			update(generation[i], values[i])
+			for i in range(generation_size):
+				update(generation[i], values[i])
+			graph.append((best_result[1], time() - starttime))
 
-	return best_result[0]
+	return (graph, 'k'), best_result[0]
