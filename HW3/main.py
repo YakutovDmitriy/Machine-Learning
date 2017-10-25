@@ -22,42 +22,54 @@ def training(pack):
 def classify(mtypes, mProb, all_words, msg):
     eps = 10 ** -7
     text = list(filter(lambda word: word in all_words, msg.text))
-    spamProb = -math.log(mtypes[MessageType.spam]) - sum(math.log(mProb[MessageType.spam, word] + eps) for word in text)
-    legitProb = -math.log(mtypes[MessageType.legit]) - sum(math.log(mProb[MessageType.legit, word] + eps) for word in text)
-    if spamProb < legitProb * 1.0:
+    spamProb = math.log(mtypes[MessageType.spam]) + sum(math.log(mProb[MessageType.spam, word] + eps) for word in text)
+    legitProb = math.log(mtypes[MessageType.legit]) + sum(math.log(mProb[MessageType.legit, word] + eps) for word in text)
+    if spamProb > legitProb + 10:
         return MessageType.spam
     else:
         return MessageType.legit
 
-def main():
+def main(mode):
     mails = read_messages()
-    mtypes, mProb = defaultdict(lambda: 0), defaultdict(lambda: 0)
-    for pack in mails:
-        curc, curf = training(pack)
-        for k in curc.keys():
-            mtypes[k] += curc[k]
-        for k in curf.keys():
-            mProb[k] += curf[k]
-    for k in mtypes.keys():
-        mtypes[k] /= len(mails)
-    for k in mProb.keys():
-        mtypes[k] /= len(mails)
-    all_words = set(map(lambda p: p[1], mProb.keys()))
-    predict = []
-    answer = []
-    counts = [[0, 0], [0, 0]]
-    for pack in mails:
-        for msg in pack:
-            ptype = classify(mtypes, mProb, all_words, msg)
-            predict.append(int(ptype == MessageType.spam))
-            answer.append(int(msg.mtype == MessageType.spam))
-            counts[ptype == MessageType.spam][msg.mtype == MessageType.spam] += 1
-    print("mean squared error: ", mean_squared_error(predict, answer))
-    print("f1 score: ", f1_score(predict, answer))
-    print("test count: ", sum(len(pack) for pack in mails))
-    print("legit message in legit folder: ", counts[0][0])
-    print("legit message in spam folder:  ", counts[0][1])
-    print("spam message in legit folder:  ", counts[1][0])
-    print("spam message in spam folder:   ", counts[1][1])
+    if mode == "CROSS":
+        tcm = [(mails[:x] + mails[x + 1:], [m]) for x, m in enumerate(mails)]
+    elif mode == "ALL":
+        tcm = [(mails, mails)]
+    else:
+        raise RuntimeException("Unknown mode: %s" % mode)
+    sum_mse, sum_f1, sum_count = 0, 0, defaultdict(lambda: 0.0)
+    for test_mail, check_mail in tcm:
+        mtypes, mProb = defaultdict(lambda: 0), defaultdict(lambda: 0)
+        for pack in test_mail:
+              curc, curf = training(pack)
+              for k in curc.keys():
+                  mtypes[k] += curc[k]
+              for k in curf.keys():
+                  mProb[k] += curf[k]
+        for k in mtypes.keys():
+            mtypes[k] /= len(mails)
+        for k in mProb.keys():
+            mtypes[k] /= len(mails)
+        all_words = set(map(lambda p: p[1], mProb.keys()))
+        predict = []
+        answer = []
+        for pack in check_mail:
+            for msg in pack:
+                ptype = classify(mtypes, mProb, all_words, msg)
+                predict.append(int(ptype == MessageType.spam))
+                answer.append(int(msg.mtype == MessageType.spam))
+                sum_count[ptype, msg.mtype] += 1
+        sum_mse += mean_squared_error(predict, answer)
+        sum_f1 += f1_score(predict, answer)
+    print("Training in mode %s:" % mode.lower())
+    print("  average number of mails in test:", sum(len(x) for x in mails) / len(tcm))
+    print("  mean squared error:", sum_mse / len(tcm))
+    print("  f1 score:", sum_f1 / len(tcm))
+    for predict in [MessageType.spam, MessageType.legit]:
+        for actual in [MessageType.spam, MessageType.legit]:
+            print("  %s message in %s folder: %f" % (actual, predict, sum_count[predict, actual] / len(tcm)))
 
-main()
+
+main("ALL")
+print()
+main("CROSS")
