@@ -34,8 +34,6 @@ def classify(mtypes, mProb, all_words, msg, spam_weight):
     spamProb = math.log(mtypes[MessageType.spam]) + sum(math.log(mProb[MessageType.spam, word] + eps) for word in text)
     legitProb = math.log(mtypes[MessageType.legit]) + sum(math.log(mProb[MessageType.legit, word] + eps) for word in text)
     res = MessageType.spam if spamProb > legitProb * spam_weight else MessageType.legit
-    if res == MessageType.spam and msg.mtype == MessageType.legit:
-        print(spamProb, legitProb, spamProb / legitProb)
     return res
 
 def main(mails, mode, spam_weights):
@@ -89,10 +87,10 @@ def build_plot(points):
     plt.figure()
     plt.rcParams["figure.figsize"] = list(map(lambda x: x * 1, plt.rcParams["figure.figsize"]))
     points = sorted(points)
-    # data = sum(
-    #     [[points[i], points[i + 1], 'r'] for i in range(len(points) - 1)], []
-    # )
-    # plt.plot(*data)
+    data = sum(
+        [[(points[i][0], points[i + 1][0]), (points[i][1], points[i + 1][1]), 'b'] for i in range(len(points) - 1)], []
+    )
+    plt.plot(*data)
     for xx, yy in points:
         plt.scatter(xx, yy, c='r',cmap=cmap_bold, linewidths=0, s=5)
     plt.title("ROC-curve")
@@ -102,12 +100,10 @@ def build_plot(points):
 
 mails = read_messages()
 
-main(mails, "CROSS", [1.8])
+# points = main(mails, "CROSS", [1.1, 1.8])
+# build_plot(points)
 
-# for mode in ["CROSS"]:
-#     def get(n):
-#         return [k * 10 ** n for k in range(1, 10)] + [-k * 10 ** n for k in range(1, 10)]
-#     # points = main(mails, mode, get(5) + get(4) + get(3) + list(range(-100, 110, 10)))
-#     points = main(mails, mode, list(range(-100, 110, 20)))
-#     print(points)
-#     build_plot(points)
+for mode in ["CROSS"]:
+    points = main(mails, mode, list(numpy.arange(0.05, 3.05, 0.05)))
+    print(points)
+    build_plot(points)
