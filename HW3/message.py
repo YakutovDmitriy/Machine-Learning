@@ -7,13 +7,13 @@ class MessageType:
     unknown = "unknown"
 
 class Message:
-    __slots__ = ['subject', 'text', 'spam', 'mtype']
+    __slots__ = ['subject', 'text', 'mtype']
     def __init__(self, subject, text, mtype):
         self.subject = subject
-        self.text = subject * 10 + text
+        self.text = subject * 0 + text
         self.mtype = mtype
     def __str__(self):
-        return ("Subject (%s): %s" % (self.mtype, ' '.join(map(str, self.subject))) + '\n\n' + ' '.join(map(str, self.text)))
+        return ("Subject (%s): " % self.mtype + ' '.join(map(str, self.subject))) + '\n\n' + ' '.join(map(str, self.text))
 
 def parse_message(filename, all):
     subject = list(map(int, all[0].split()[1:]))

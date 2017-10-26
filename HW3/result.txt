@@ -1,0 +1,36 @@
+Training in mode all (spam weight 10.000000):
+  average number of mails in test: 1090.0
+  mean squared error: 0.000917431192661
+  f1 score: 0.998959417274
+  spam message in spam folder: 480.000000
+  legit message in spam folder: 1.000000
+  spam message in legit folder: 0.000000
+  legit message in legit folder: 609.000000
+
+Training in mode all (spam weight 50.000000):
+  average number of mails in test: 1090.0
+  mean squared error: 0.00183486238532
+  f1 score: 0.997912317328
+  spam message in spam folder: 478.000000
+  legit message in spam folder: 0.000000
+  spam message in legit folder: 2.000000
+  legit message in legit folder: 610.000000
+
+Training in mode cross (spam weight 10.000000):
+  average number of mails in test: 109.0
+  mean squared error: 0.0220183486239
+  f1 score: 0.974799860888
+  spam message in spam folder: 46.600000
+  legit message in spam folder: 1.000000
+  spam message in legit folder: 1.400000
+  legit message in legit folder: 60.000000
+
+Training in mode cross (spam weight 50.000000):
+  average number of mails in test: 109.0
+  mean squared error: 0.0275229357798
+  f1 score: 0.96796369888
+  spam message in spam folder: 45.600000
+  legit message in spam folder: 0.600000
+  spam message in legit folder: 2.400000
+  legit message in legit folder: 60.400000
+

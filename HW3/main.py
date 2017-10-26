@@ -5,9 +5,16 @@ import numpy
 from message import *
 from collections import defaultdict
 from sklearn.metrics import f1_score, mean_squared_error
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib import collections as mc
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 def training(pack):
-    mProb, mtypes, wcnt = defaultdict(lambda:0), defaultdict(lambda:0), defaultdict(lambda:0)
+    mProb, mtypes, wcnt = [defaultdict(lambda:0) for _ in range(3)]
     for msg in pack:
         for word in msg.text:
             mProb[msg.mtype, word] += 1
@@ -19,25 +26,26 @@ def training(pack):
         mtypes[mtype] /= len(pack)
     return mtypes, mProb
 
-def classify(mtypes, mProb, all_words, msg):
+
+
+def classify(mtypes, mProb, all_words, msg, spam_weight):
     eps = 10 ** -7
     text = list(filter(lambda word: word in all_words, msg.text))
     spamProb = math.log(mtypes[MessageType.spam]) + sum(math.log(mProb[MessageType.spam, word] + eps) for word in text)
     legitProb = math.log(mtypes[MessageType.legit]) + sum(math.log(mProb[MessageType.legit, word] + eps) for word in text)
-    if spamProb > legitProb + 10:
-        return MessageType.spam
-    else:
-        return MessageType.legit
+    res = MessageType.spam if spamProb > legitProb * spam_weight else MessageType.legit
+    if res == MessageType.spam and msg.mtype == MessageType.legit:
+        print(spamProb, legitProb, spamProb / legitProb)
+    return res
 
-def main(mode):
-    mails = read_messages()
+def main(mails, mode, spam_weights):
     if mode == "CROSS":
         tcm = [(mails[:x] + mails[x + 1:], [m]) for x, m in enumerate(mails)]
     elif mode == "ALL":
         tcm = [(mails, mails)]
     else:
         raise RuntimeException("Unknown mode: %s" % mode)
-    sum_mse, sum_f1, sum_count = 0, 0, defaultdict(lambda: 0.0)
+    sum_mse, sum_f1, sum_count = defaultdict(lambda: 0), defaultdict(lambda: 0), defaultdict(lambda: defaultdict(lambda: 0.0))
     for test_mail, check_mail in tcm:
         mtypes, mProb = defaultdict(lambda: 0), defaultdict(lambda: 0)
         for pack in test_mail:
@@ -53,23 +61,53 @@ def main(mode):
         all_words = set(map(lambda p: p[1], mProb.keys()))
         predict = []
         answer = []
-        for pack in check_mail:
-            for msg in pack:
-                ptype = classify(mtypes, mProb, all_words, msg)
-                predict.append(int(ptype == MessageType.spam))
-                answer.append(int(msg.mtype == MessageType.spam))
-                sum_count[ptype, msg.mtype] += 1
-        sum_mse += mean_squared_error(predict, answer)
-        sum_f1 += f1_score(predict, answer)
-    print("Training in mode %s:" % mode.lower())
-    print("  average number of mails in test:", sum(len(x) for x in mails) / len(tcm))
-    print("  mean squared error:", sum_mse / len(tcm))
-    print("  f1 score:", sum_f1 / len(tcm))
-    for predict in [MessageType.spam, MessageType.legit]:
-        for actual in [MessageType.spam, MessageType.legit]:
-            print("  %s message in %s folder: %f" % (actual, predict, sum_count[predict, actual] / len(tcm)))
+        for spam_weight in spam_weights:
+            for pack in check_mail:
+                for msg in pack:
+                    ptype = classify(mtypes, mProb, all_words, msg, spam_weight)
+                    predict.append(int(ptype == MessageType.spam))
+                    answer.append(int(msg.mtype == MessageType.spam))
+                    sum_count[spam_weight][ptype, msg.mtype] += 1
+            sum_mse[spam_weight] += mean_squared_error(predict, answer)
+            sum_f1[spam_weight] += f1_score(predict, answer)
+    for spam_weight in spam_weights:
+        print("Training in mode %s (spam weight %f):" % (mode.lower(), spam_weight))
+        print("  average number of mails in test:", sum(len(x) for x in mails) / len(tcm))
+        print("  mean squared error:", sum_mse[spam_weight] / len(tcm))
+        print("  f1 score:", sum_f1[spam_weight] / len(tcm))
+        for predict in [MessageType.spam, MessageType.legit]:
+            for actual in [MessageType.spam, MessageType.legit]:
+                print("  %s message in %s folder: %f" % (actual, predict, sum_count[spam_weight][predict, actual] / len(tcm)))
+    return [(sum_count[w][MessageType.legit, MessageType.spam] /
+                (sum_count[w][MessageType.spam, MessageType.spam] + sum_count[w][MessageType.legit, MessageType.spam]),
+            sum_count[w][MessageType.legit, MessageType.legit] /
+                (sum_count[w][MessageType.spam, MessageType.legit] + sum_count[w][MessageType.legit, MessageType.legit]))
+            for w in spam_weights]
 
+def build_plot(points):
+    cmap_bold = ListedColormap(['#000000', '#ffffff'])
+    plt.figure()
+    plt.rcParams["figure.figsize"] = list(map(lambda x: x * 1, plt.rcParams["figure.figsize"]))
+    points = sorted(points)
+    # data = sum(
+    #     [[points[i], points[i + 1], 'r'] for i in range(len(points) - 1)], []
+    # )
+    # plt.plot(*data)
+    for xx, yy in points:
+        plt.scatter(xx, yy, c='r',cmap=cmap_bold, linewidths=0, s=5)
+    plt.title("ROC-curve")
+    plt.xlim(0, max(p[0] for p in points) * 1.1)
+    plt.ylim(0, max(p[1] for p in points) * 1.1)
+    plt.show()
 
-main("ALL")
-print()
-main("CROSS")
+mails = read_messages()
+
+main(mails, "CROSS", [1.8])
+
+# for mode in ["CROSS"]:
+#     def get(n):
+#         return [k * 10 ** n for k in range(1, 10)] + [-k * 10 ** n for k in range(1, 10)]
+#     # points = main(mails, mode, get(5) + get(4) + get(3) + list(range(-100, 110, 10)))
+#     points = main(mails, mode, list(range(-100, 110, 20)))
+#     print(points)
+#     build_plot(points)
